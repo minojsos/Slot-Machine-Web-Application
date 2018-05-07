@@ -1,0 +1,333 @@
+/* 
+ * Font Imports
+ * Font 1 : Source Sans Pro
+ */
+ @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,300i,400,400i,600,600i,700');
+
+ /*
+  * CSS
+  */
+body {
+    background-image: linear-gradient(to top, #96fbc4 0%, #f9f586 100%);
+    background-repeat: no-repeat;
+    background-color: #96fbc4;
+    margin: 0;
+    padding: 0;
+}
+
+main {
+    background-color: rgba(255,255,255,1);
+    width: 75%;
+    padding: 2%;
+    margin: 0 auto;
+    margin-top: 3%;
+    font-family: 'Source Sans Pro',sans-serif;
+    -webkit-box-shadow: -10px 10px 40px -7px rgba(0,0,0,0.25);
+    -moz-box-shadow: -10px 10px 40px -7px rgba(0,0,0,0.25);
+    box-shadow: -10px 10px 40px -7px rgba(0,0,0,0.25);
+}
+
+h1 {
+    font-size: 6em;
+    font-weight: 300;
+    text-align: center;
+}
+
+h4 {
+    font-size: 1em;
+    font-weight: 400;
+    text-align: center;
+}
+
+section {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.playerInfo {
+    width: 20%;
+    float: right;
+    text-align: right;
+}
+
+.playerInfo h4 {
+    font-family: 'Source Sans Pro',sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    display: block;
+}
+
+.playerInfo .logout {
+    width: 85%;
+    padding: 15px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: 'Gotham Light';
+    color: rgba(255,255,255,1);
+    -webkit-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    text-transform: capitalize;
+    text-align: center;
+    background-image: linear-gradient(to right, #c79081 0%, #dfa579 100%);
+    display: block;
+    cursor: pointer;
+    transition: all 0.25s ease-in-out;
+}
+
+.playerInfo .logout a {
+    color: rgba(255, 255, 255, 255);
+}
+
+.logout:hover {
+    transform: scale(1.1);
+    opacity: 0.85;
+}
+
+.slotMachine {
+
+}
+
+.slotMachine ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+.slotMachine ul li {
+    display: inline-block;
+    margin: 10px;
+}
+
+.slotMachine button {
+    padding: 30px;
+    background: rgba(236, 240, 241,1.0);
+    border: none;
+    border-radius: 5px;
+    font-family: 'Gotham Light';
+    font-size: 1em;
+    cursor: pointer;
+    transition: 0.25s all ease-in-out;
+}
+
+.slotMachine button:hover {
+    background-color: rgba(52, 73, 94,1.0);
+    color: rgba(255,255,255,1.0);
+    -webkit-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+}
+
+.slotMachine button:disabled, .slotMachine button[disabled] {
+    background-color: rgba(52, 73, 94, 1.0);
+    color: rgba(255, 255, 255, 1.0);
+    cursor: default;
+}
+
+.slotMachine .reset {
+    background: rgba(231, 76, 60,1.0);
+    color: rgba(255,255,255,1);
+}
+
+.slotMachine .reset:hover {
+    background: rgba(231,76,60,0.75);
+}
+
+.slotMachine .spin {
+    border-radius: 50%;
+    background-image: linear-gradient(to top, #4481eb 0%, #04befe 100%);
+    color: rgba(255,255,255,1);
+    height: 100px;
+}
+
+.slotMachine .spin:hover {
+    opacity: 0.85;
+}
+
+.slotMachine .lblArea{
+    width: 100%;
+    padding: 15px;
+    font-family: 'Gotham Light';
+    overflow: hidden;
+}
+
+.slotMachine .lblArea p {
+    width: auto;
+    padding: 25px;
+    border-radius: 5px;
+    -webkit-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    text-transform: capitalize;
+    background-image: linear-gradient(to right, #c79081 0%, #dfa579 100%);
+    color: rgba(255,255,255,1);
+    font-size: 14px;
+    transition: all 0.25s ease-in-out;
+}
+
+.slotMachine .lblArea p:hover {
+    opacity: 0.85;
+}
+
+.slotMachine .spinArea {
+    width: 100%;
+    padding: 15px;
+}
+
+.slotMachine .spinArea .slot {
+    width: 32.919%;
+    -webkit-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    -moz-box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    box-shadow: 1px 1px 25px 1px rgba(0,0,0,0.1);
+    display: inline-block;
+    transition: 0.25s ease-in-out;
+}
+
+.slotMachine .spinArea .slot:hover {
+    transform: scale(1.1);
+}
+
+.slotMachine .spinArea .slot img {
+    width: 50%;
+    padding: 25px;
+    margin: 0 auto;
+    display: block;
+}
+
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
+.content {
+    margin: 0 auto;
+    padding: 50px;
+}
+
+.content ul {
+    margin: 0 auto;
+    width: 75%;
+}
+
+.content ul li {
+    padding-top: 15px;
+}
+
+a {
+    text-decoration: none;
+    color: #4481eb;
+}
+
+form {
+    width: 100%;
+}
+
+form input {
+    display: block;
+    margin: 0 auto;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    transition: all 0.25s ease-in-out;
+}
+
+form input[type=text]:focus,input[type=password]:focus {
+    transform: scale(1.025);
+}
+
+form input[type=text],input[type=password] {
+    width: 75%;
+    font-size: 16px;
+    font-weight: 300;
+    padding: 15px;
+    border: 3px solid rgba(240, 240, 240,1.0);
+    font-family: 'Source Sans Pro';
+}
+
+form input[type=submit] {
+    display: none;
+}
+
+form label {
+    display: none;
+}
+
+form .info {
+    display: none;
+}
+
+form dd {
+    margin: 0;
+}
+
+form p {
+    text-align: center;
+    font-weight: 300;
+}
+
+.p {
+    text-align: center;
+    font-weight: 300;
+}
+
+.button {
+    padding: 15px;
+    width: 50%;
+    font-family: 'Source Sans Pro';
+    font-weight: 300;
+    font-size: 16px;
+    border: none;
+    background: #4481eb;
+    color: rgba(255,255,255,1);
+    display: block;
+    margin: 0 auto;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    transition: all 0.25s ease-in-out;
+}
+
+.message {
+    font-size: 11px;
+    font-weight: 400;
+    text-align: center;
+}
+
+.red {
+    color: red;
+}
+
+.green {
+    color: green;
+}
+
+footer {
+    width: 79%;
+    padding: 0%;
+    margin: 0 auto;
+    font-family: 'Source Sans Pro', sans-serif;
+    color: rgba(108, 122, 137,1);
+    overflow: hidden;
+}
+
+footer h4 {
+    font-size: 1em;
+}
+
+.statistics {
+    padding: 10px;
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+.statisitcs ul {
+    list-style-type: none;
+}
+
+.statistics ul li {
+    display: block;
+    padding: 5px;
+    font-weight: 300;
+    font-size: 32px;
+}

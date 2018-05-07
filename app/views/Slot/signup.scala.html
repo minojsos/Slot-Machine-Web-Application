@@ -1,0 +1,91 @@
+@(signupForm : Form[SignUp], title : String, description : String, keywords : String, author : String)
+@import helper._
+
+<html>
+<head>
+    <title>@title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@description"/>
+    <meta name="keywords" content="@keywords"/>
+    <meta name="author" content="@author"/>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/style.css")">
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script src="@routes.Assets.versioned("javascripts/firebase.js")"></script>
+
+    <script type="text/Javascript" language="JavaScript">
+
+        function signUp() {
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                    .then(function (user){
+                        // Success
+                        if(user) {
+                            var fullname = document.getElementById("fullName").value;
+
+                            firebase.database().ref('User/' + user.uid).set({
+                                betAmt: 0,
+                                credits: 10,
+                                creditsBet: 0,
+                                creditsLost: 0,
+                                creditsWon: 0,
+                                fullname: fullname,
+                                loss: 0,
+                                totalSpins: 0,
+                                wins: 0
+                            });
+
+                            document.getElementById("submit").click();
+                        } else {
+                            alert("Failed! 56");
+                        }
+                    })
+                    .catch(function(error) {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+
+                        alert(error.code+": "+errorMessage);
+                    });
+
+        }
+
+        function signupFunc() {
+            return true;
+        }
+
+    </script>
+
+</head>
+<body>
+<main style="width: 45%;">
+    <section id="signup">
+        <div class="content">
+            <h1 style="margin:0; padding: 0;">Sign Up</h1>
+
+            @helper.form(action = routes.UserController.signupForm(), 'onsubmit -> "return signupFunc();") {
+
+                @helper.inputText(signupForm("email"), 'placeholder-> "Email", 'name -> "email", 'id -> "email", 'required -> "required")
+
+                @helper.inputText(signupForm("fullName"), 'placeholder -> "Full Name", 'name -> "fullName", 'required -> "required")
+                <p class="message" id="nameMsg"></p>
+
+                @helper.inputPassword(signupForm("password"), 'placeholder-> "Password", 'name -> "password", 'required -> "required")
+                <p class="message" id="passwordMsg"></p>
+
+                <input type="submit" name="submit" id="submit" value="Sign In"/>
+            }
+
+            <button onclick="signUp()" class="button">Sign Up</button>
+            <a href="/" alt="Sign in to your account"><p class="p">Have an Account?</p></a>
+        </div>
+    </section>
+</main>
+<footer>
+    <h4>Copyright &copy; 2018. All Rights Reserved. Minoj Selvarasa - 2016131</h4>
+</footer>
+</body>
+</html>

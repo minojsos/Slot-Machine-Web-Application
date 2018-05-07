@@ -1,0 +1,82 @@
+@(loginForm : Form[Login], title : String, description : String, keywords : String, author : String)
+@import helper._
+
+<html>
+<head>
+    <title>@title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@description"/>
+    <meta name="keywords" content="@keywords"/>
+    <meta name="author" content="@author"/>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/style.css")"/>
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")"/>
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script src="@routes.Assets.versioned("javascripts/firebase.js")"></script>
+</head>
+<body>
+    <script>
+
+        // Authenticate user to login into application
+        function authentication() {
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                    .then(function(user) {
+                        // Success
+                        alert("success");
+                        document.getElementById("submit").click();
+                        return true;
+                    })
+                    .catch(function(error) {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+                        alert(errorCode + ": "+errorMessage);
+                        return false;
+                    });
+
+        }
+
+        // Log the user into the application - Redirect to index page
+        function login() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in.
+                    alert("Signed In");
+                    return true;
+                } else {
+                    // User is signed out.
+                    alert("Not Signed In");
+                    return false;
+                }
+            });
+        }
+
+    </script>
+    <main style="width: 45%;">
+        <section id="login">
+            <div class="content">
+                <h1 style="margin:0; padding: 0;" onclick="click()">Sign In</h1>
+
+                @helper.form(action = routes.UserController.login(), 'id -> "login", 'onsubmit -> "return login();") {
+
+                    @helper.inputText(loginForm("email"), 'placeholder -> "E-mail", 'name -> "email", 'required -> "required", 'id -> "email")
+                    @helper.inputPassword(loginForm("password"), 'placeholder-> "Password", 'name -> "password", 'required -> "required", 'id -> "password")
+
+                    <input type="submit" value="" name="submit" id="submit"/>
+
+                }
+
+                <button class="button" onclick="authentication()">Sign In</button>
+                <a href="/signup" alt="Sign Up to begin Gambling"><p class="p">Create an Account</p></a>
+
+            </div>
+        </section>
+    </main>
+    <footer>
+        <h4>Copyright &copy; 2018. All Rights Reserved. Minoj Selvarasa - 2016131</h4>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,728 @@
+@(user : String, title : String, description : String, keywords : String, author : String, betAmt : String)
+
+<html>
+<head>
+    <title>@title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@description"/>
+    <meta name="keywords" content="@keywords"/>
+    <meta name="author" content="@author"/>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/style.css")">
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script src="@routes.Assets.versioned("javascripts/firebase.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/symbol.js")"></script>
+
+    <script>
+        var credits = 0; // Store Credits
+        var wins = 0; // Store the Number of times the User has won
+        var loss = 0; // Store the Number of times the User has lost
+        var betAmt = 0; // Store the Bet Credits
+        var symbols = []; // Array to store all symbols
+        var isSpinning = false; // Check if the Reels are spinning
+        var swapping; // INterval Spinning
+        var values = []; // Store the values for each symbol after the user has stopped the reels froms spinning
+        var winningCreds = 0; // Store the Winning Credits amount temporarily
+        var creditsWon; // Store the Number of Credits Won
+        var creditsBet; // Store the Credits Bet
+        var creditsLost; // Store the Credits Lost
+
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // User is signed in.
+                var email = user.email;
+                var uid = user.uid;
+
+                // Retrieve values from the database and store it in the variables
+                var firebaseRef = firebase.database().ref('User/'+uid).once('value').then(function(snapshot) {
+                    betAmt = parseInt(snapshot.val().betAmt);
+                    credits = parseInt(snapshot.val().credits);
+                    creditsBet = snapshot.val().creditsBet;
+                    creditsLost = snapshot.val().creditsLost;
+                    creditsWon = snapshot.val().creditsWon;
+                    loss = parseInt(snapshot.val().loss);
+                    wins = parseInt(snapshot.val().wins);
+
+                    // Assign the values to the variables
+                    document.getElementById("creditsLbl").innerHTML = credits;
+                    document.getElementById("betAmtLbl").innerHTML = betAmt;
+                });
+
+            } else {
+                // User is signed out.
+                //logout();
+                alert("Failed");
+            }
+        });
+
+        //Red Seven Object
+        symbols[0] = new Symbols("redseven",7);
+        //Bell Object
+        symbols[1] = new Symbols("bell",6);
+        //Watermelon
+        symbols[2] = new Symbols("watermelon",5);
+        //Plum
+        symbols[3] = new Symbols("plum",4);
+        //Lemon
+        symbols[4] = new Symbols("lemon",3);
+        //Cherry
+        symbols[5] = new Symbols("cherry",2);
+
+        // Event Listener to display an image in each reel after the DOMContent has done loading
+        document.addEventListener("DOMContentLoaded", function(event) {
+            document.getElementById("imageOne").src = '/assets/images/'+symbols[0].getName()+'.png';
+            document.getElementById("imageTwo").src = '/assets/images/'+symbols[0].getName()+'.png';
+            document.getElementById("imageThree").src = '/assets/images/'+symbols[0].getName()+'.png';
+        });
+
+        /**
+         * Function to Add one credit to total bet amount.
+         * Ensure user has signed in. When the user clicks the Bet One button a credit is added to the Bet Credits and deducted
+         * from the currently available credits. This only happens if there are any credits available.
+         * Update the variables and the labels that display the values of the variables.
+         * Catch any exception that occurs when trying to update values in the database.
+         */
+        function betOne() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    if(!isSpinning) {
+                        // Reels are not spinning
+                        if(credits > 0) {
+                            // Update Variables
+                            betAmt += 1;
+                            credits -= 1;
+
+                            try {
+                                var updates = {};
+                                updates['/User/' + user.uid + '/credits'] = credits;
+                                updates['/User/' + user.uid + '/betAmt'] = betAmt;
+
+                                // Update Credits and Bet Amount
+                                firebase.database().ref().update(updates);
+
+                                // Update Labels
+                                document.getElementById("betAmtLbl").innerHTML = betAmt;
+                                document.getElementById("creditsLbl").innerHTML = credits;
+                            } catch(err) {
+                                // Let the user know if update failed
+                                credits += 1;
+                                betAmt -= 1;
+                                alert("Connection to Firebase unavailable!");
+                            }
+                        } else {
+                            // If available credits are 0, unable to add credits to bet
+                            document.getElementById("redMsg").innerHTML = "Insufficient Credits!";
+                            document.getElementById("greenMsg").innerHTML = "";
+                        }
+                    }
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Add Credits Function
+         * Add a credit to credits variable when user clicks on the Add Credits Button
+         * The database is also updated. This is to ensure that both the application and database is in synchronization.
+         * Catch any exception that occurs when trying to update values in the database.
+         */
+        function addCredits() {
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    if(!isSpinning) {
+                        // If Reels are not spinning
+                      if(credits < 100) {
+                          // Update Variables
+                          credits += 1;
+
+                          try {
+                              // Update Credits in Database
+                              var updates = {};
+                              updates['User/' + user.uid + '/credits'] = credits;
+                              firebase.database().ref().update(updates);
+
+                              // Update Credits Label
+                              document.getElementById("creditsLbl").innerHTML = credits;
+                          } catch(err) {
+                              // Let the user know if update failed
+                              credits -= 1;
+                              alert("Connection to Firebase unavailable!");
+                          }
+                      } else {
+                          // If user has reached the maximum credits limit
+                          document.getElementById("redMsg").innerHTML = "Credits Limit Reached!";
+                          document.getElementById("greenMsg").innerHTML = "";
+                      }
+                    }
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Bet the Maximum credits possible in a single button click - Three Credits
+         * Add 3 Credits to the Bet Credits and deduct that from the Credits. Ensure the user is signed in before doing this.
+         * Credits are added to Bet Credits only if there are a minimum of 3 credits. The button can only be clicked once. There the
+         * button is disabled when clicked.
+         * Variables and Labels that display the variable values are updated.
+         * Catch any exception that occurs when trying to update values in the database.
+         */
+        function betMax() {
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    if(!isSpinning) {
+                        // If the Reels are not spinning
+                        if(credits >= 3) {
+                            // Update Variables
+                            betAmt += 3;
+                            credits -= 3;
+
+                            try {
+                                var updates = {};
+                                updates['User/' + user.uid + '/credits'] = credits;
+                                updates['User/' + user.uid + '/betAmt'] = betAmt;
+                                // Update Credits and Bet Amount
+                                firebase.database().ref().update(updates);
+
+                                // Update labels
+                                document.getElementById("betAmtLbl").innerHTML = betAmt;
+                                document.getElementById("creditsLbl").innerHTML = credits;
+
+                                // Disable Bet Max Button
+                                document.getElementById("betMaxCredit").disabled = true;
+                            } catch(err) {
+                                // Let the user know if update failed
+                                betAmt -= 3;
+                                credits += 3;
+                                alert("Connection to Firebase unavailable!");
+                            }
+                        } else {
+                            // If the available credits are less than 3 since max bet requires atleast 3 credits.
+                            document.getElementById("redMsg").innerHTML = "Insufficient Credits";
+                            document.getElementById("greenMsg").innerHTML = "";
+                        }
+                    }
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+
+        }
+
+        /**
+         * If the Reels are not spinning already, allow the reels to spin by swapping images in the reels and increment the total number of times the
+         * player has played the game.
+         * Reset the variables - Assign 0 to those variables.
+         * Reset the Labels used to display messages.
+         * BetMaxCredits button is enabled if previously disabled.
+         */
+        function spin() {
+            if(!isSpinning) {
+                // If Reels are not spinning alreadt
+                if(betAmt > 0) {
+                    // If the Bet Area contains credits for bet
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if(user) {
+                            // User is Signed In
+                            document.getElementById("redMsg").innerHTML = "";
+                            document.getElementById("greenMsg").innerHTML = "";
+                            values[0] = 0;
+                            values[1] = 0;
+                            creditsWon = 0;
+                            creditsBet = 0;
+                            creditsLost = 0;
+                            winningCreds = 0;
+                            isSpinning = true;
+                            incrementSpin();
+                            swapImages();
+
+                            // If the BetMaxCredits Button is disabled, enable it
+                            if (document.getElementById("betMaxCredit").disabled == true) {
+                                document.getElementById("betMaxCredit").disabled = false;
+                            }
+                        } else {
+                            // If user doesn't seem to be logged in
+                            alert("Session Expired!");
+                        }
+                    });
+
+                } else {
+                    document.getElementById("redMsg").innerHTML = "No Credits in Bet Area";
+                    document.getElementById("greenMsg").innerHTML = "";
+                }
+            } else {
+                document.getElementById("redMsg").innerHTML = "Already Spinning";
+                document.getElementById("greenMsg").innerHTML = "";
+            }
+        }
+
+        /**
+         * Function to Increment the Number of Times the user has played the game.
+         * Updates the totalSpin field in the database everytime the user plays the game - Clicks on the Spin button and the reels spin.
+         */
+        function incrementSpin() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is Signed in
+                    var ref = firebase.database().ref('User/'+user.uid+'/totalSpins');
+                    ref.transaction(function(totalSpin) {
+                        // If node/clicks has never been set, currentRank will be `null`.
+                        return (totalSpin || 0) + 1;
+                    });
+                } else {
+                    // Stop Spinning session expired or user logged out
+                    isSpinning = true;
+                }
+            });
+        }
+
+        /**
+         * Function to Swap Images in Reel
+         * The Images in the reel need to be randomly swapped and continously changed until the user decides the Reels should stop spinning.
+         * This is acheived by initially reading a random index between 0 and 6 (7 Symbols) and then the Symbol at that index in the symbols array
+         * is displayed. The same is done for the other two reels. A 100ms interval is present between each set of swaps. (3 Swaps (3 Reels) per set)
+         */
+        function swapImages() {
+            swapping = setInterval(function(){
+
+                var index = parseInt(Math.random() * (6 - 0) + 0);
+                document.getElementById("imageOne").src = "assets/images/"+symbols[index].getName()+".png";
+                document.getElementById("imageOne").name = symbols[index].getName();
+
+                index = parseInt(Math.random() * (6 - 0) + 0);
+                document.getElementById("imageTwo").src = "assets/images/"+symbols[index].getName()+".png";
+                document.getElementById("imageTwo").name = symbols[index].getName();
+
+                index = parseInt(Math.random() * (6 - 0) + 0);
+                document.getElementById("imageThree").src = "assets/images/"+symbols[index].getName()+".png";
+                document.getElementById("imageThree").name = symbols[index].getName();
+
+            }, 100);
+        }
+
+        /**
+         * Add Event Listeners to each Reel
+         * When a Reel is clicked, it is checked whether the Reels are already spinning. If they are, the isSpinning variable
+         * is set to false which indicates that the spinning should stop. Stop the Swapping and then calculate credits to check if the
+         * user has won.
+         */
+        document.addEventListener("DOMContentLoaded", function(event) {
+
+                // Add EventListener to ReelOne - ImageOne
+                var imageOne = document.getElementById("imageOne");
+                imageOne.addEventListener("click", function(){
+                    if(isSpinning) {
+                        isSpinning = false;
+                        clearInterval(swapping);
+                        calculateCredits();
+                    }
+                });
+
+                // Add EventListener to ReelTwo - ImageTwo
+                var imageTwo = document.getElementById("imageTwo");
+                imageTwo.addEventListener("click", function(){
+                    if(isSpinning) {
+                        isSpinning = false;
+                        clearInterval(swapping);
+                        calculateCredits();
+                    }
+                });
+
+                // Add EventListener to ReelThree - ImageThree
+                var imageThree = document.getElementById("imageThree");
+                imageThree.addEventListener("click", function(){
+                    if(isSpinning) {
+                        isSpinning = false;
+                        clearInterval(swapping);
+                        calculateCredits();
+                    }
+                });
+
+        });
+
+        /**
+         * Function to Calculate the Winning Credits after Stopping the Reels from Spinning
+         * Compare which Reels match with which. If All three Images/Reels match, the Winning Credits is calculated as following:
+         * Bet Credits * ( Value Of Symbol * 2)
+         * If Two Images/Reels match, the Winning Credits is calculated as following: Bet Credits * Value of Symbol
+         * Update the Variables and update values in the Database.
+         */
+        function calculateCredits() {
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+
+                    // User is Signed In
+                    var imageOne = document.getElementById("imageOne").name; // Read the Name of the Symbol in ReelOne - ImageOne
+                    var imageTwo = document.getElementById("imageTwo").name; // Read the Name of the Symbol in ReelTwo - ImageTwo
+                    var imageThree = document.getElementById("imageThree").name; // Read the Name of the Symbol in ReelThree - ImageThree
+
+                    // Check if All Three Reels match
+                    if(imageOne === imageTwo && imageOne === imageThree) {
+                        // Read the value of the Symbol in ReelOne - ImageOne (Because all three Images (Reels) contain the same symbol and hence the same value
+                        for(var i = 0; i < 6; i++) {
+                            if(symbols[i].getName() === imageOne) {
+                                values[0] = symbols[i].getValue();
+                                break;
+                            }
+                        }
+                        console.log(values[0]);
+                        console.log("imageOne : "+imageOne+" | imageTwo : "+imageTwo+" | imageThree"+imageThree);
+
+                        // Calculate the Winning Credits and update variables
+                        winningCreds = betAmt * (values[0] * 2);
+                        credits += winningCreds; // Add Winning Credits to Available Credits
+                        wins++; // Increment Wins
+                        creditsWon = winningCreds-betAmt; // Add Profit
+                        creditsBet = betAmt; // Add Credits Bet
+
+                        try {
+                            var updates = {};
+                            updates['/User/'+user.uid+'/credits'] = credits;
+                            updates['/User/'+user.uid+'/betAmt'] = 0;
+                            updates['/User/'+user.uid+'/wins'] = wins;
+                            updates['/User/'+user.uid+'/loss'] = loss;
+
+                            incrementWonCredits();
+                            incrementBetCredits();
+
+                            // Update Database with Variable values
+                            firebase.database().ref().update(updates);
+                            betAmt = 0; // Bet Credits Reset
+
+                            // Update Labels
+                            document.getElementById("betAmtLbl").innerHTML = betAmt;
+                            document.getElementById("creditsLbl").innerHTML = credits;
+                            document.getElementById("greenMsg").innerHTML = "You've won "+winningCreds+" credits!";
+                            document.getElementById("redMsg").innerHTML = "";
+                        } catch(err) {
+
+                        }
+
+                    } else if(imageOne === imageTwo || imageOne === imageThree) {
+                        // ImageOne matches with ImageTwo or ImageThree
+                        // Read the value of the Symbol in ReelOne - ImageOne
+                        for(var i = 0; i < 6; i++) {
+                            if(symbols[i].getName() === imageOne) {
+                                values[0] = symbols[i].getValue();
+                            }
+                        }
+                        console.log(values[0]);
+                        console.log("imageOne : "+imageOne+" | imageTwo : "+imageTwo+" | imageThree"+imageThree);
+
+                        // Calculate the Winning Credits and update variables
+                        winningCreds = betAmt * values[0];
+                        credits += winningCreds; // Add Winning Credits to Available Credits
+                        wins++; // Increment Wins
+                        creditsWon = winningCreds-betAmt; // Add Profit
+                        creditsBet = betAmt; // Add Credits Bet
+
+                        try {
+                            var updates = {};
+                            updates['/User/'+user.uid+'/credits'] = credits;
+                            updates['/User/'+user.uid+'/betAmt'] = 0;
+                            updates['/User/'+user.uid+'/wins'] = wins;
+                            updates['/User/'+user.uid+'/loss'] = loss;
+
+                            incrementWonCredits();
+                            incrementBetCredits();
+
+                            // Update Database with Variable values
+                            firebase.database().ref().update(updates);
+                            betAmt = 0; // Bet Credits Reset
+
+                            // Update Labels
+                            document.getElementById("betAmtLbl").innerHTML = betAmt;
+                            document.getElementById("creditsLbl").innerHTML = credits;
+                            document.getElementById("greenMsg").innerHTML = "You've won "+winningCreds+" credits!";
+                            document.getElementById("redMsg").innerHTML = "";
+                        } catch(err) {
+
+                        }
+
+                    } else if(imageTwo === imageThree) {
+                        // Two Reels matched - ImageTwo matches with ImageThree
+                        for(var i = 0; i < 6; i++) {
+                            if(symbols[i].getName() === imageTwo) {
+                                values[1] = symbols[i].getValue();
+                            }
+                        }
+                        console.log(values[1]);
+                        console.log("WON");
+
+                        // Calculate the Winning Credits and update variables
+                        winningCreds = betAmt * values[1];
+                        credits += winningCreds; // Add Winning Credits to Available Credits
+                        wins++; // Increment Wins
+                        creditsWon = winningCreds - betAmt; // Add Profit
+                        creditsBet = betAmt; // Add Credits Bet
+
+                        try {
+                            var updates = {};
+                            updates['/User/'+user.uid+'/credits'] = credits;
+                            updates['/User/'+user.uid+'/betAmt'] = 0;
+                            updates['/User/'+user.uid+'/wins'] = wins;
+                            updates['/User/'+user.uid+'/loss'] = loss;
+
+                            incrementWonCredits();
+                            incrementBetCredits();
+
+                            // Update Database with Variable values
+                            firebase.database().ref().update(updates);
+                            betAmt = 0; // Bet Credits Reset
+
+                            // Update Labels
+                            document.getElementById("betAmtLbl").innerHTML = betAmt;
+                            document.getElementById("creditsLbl").innerHTML = credits;
+                            document.getElementById("greenMsg").innerHTML = "You've won "+winningCreds+" credits!";
+                            document.getElementById("redMsg").innerHTML = "";
+                        } catch(err) {
+                            // Updating Database Failed
+                            alert("Updating database failed!");
+                        }
+
+                    } else {
+                        // If None Matches - Lost
+                        loss++; // Increment Losses
+                        creditsLost = betAmt; // Update CreditsLos = Bet Credits
+                        creditsBet = betAmt; // Update Number of Credits Bet
+
+                        try {
+                            var updates = {};
+                            updates['/User/' + user.uid + '/credits'] = credits;
+                            updates['/User/' + user.uid + '/betAmt'] = 0;
+                            updates['/User/' + user.uid + '/wins'] = wins;
+                            updates['/User/' + user.uid + '/loss'] = loss;
+
+                            incrementBetCredits();
+                            incrementLostCredits();
+
+                            // Update Database with Variable values
+                            firebase.database().ref().update(updates);
+                            betAmt = 0; // Reset Bet Amount
+
+                            // Update Labels
+                            document.getElementById("betAmtLbl").innerHTML = betAmt;
+                            document.getElementById("creditsLbl").innerHTML = credits;
+                            document.getElementById("redMsg").innerHTML = "You've Lost!";
+                        } catch(err) {
+                            // Exception
+                            alert(err.message);
+                        }
+                    }
+
+                    console.log(imageOne);
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Increment the Number of Credits won by the user after playing a game
+         * Update the creditWon field in the database
+         */
+        function incrementWonCredits() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    var ref = firebase.database().ref('User/' + user.uid + '/creditsWon');
+                    ref.transaction(function (creditWon) {
+                        // If node/clicks has never been set, currentRank will be `null`.
+                        return (creditWon || 0) + creditsWon;
+                    });
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Increment the Number of Credits Bet by the User after playing a game
+         * Update the creditBet field in the database
+         */
+        function incrementBetCredits() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    var ref = firebase.database().ref('User/' + user.uid + '/creditsBet');
+                    ref.transaction(function (creditBet) {
+                        // If node/clicks has never been set, currentRank will be `null`.
+                        return (creditBet || 0) + creditsBet;
+                    });
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Increment the number of credits lost by the user after playing a game
+         * Update the creditLost field in the database
+         */
+        function incrementLostCredits() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // User is signed in
+                    var ref = firebase.database().ref('User/' + user.uid + '/creditsLost');
+                    ref.transaction(function (creditLost) {
+                        // If node/clicks has never been set, currentRank will be `null`.
+                        return (creditLost || 0) + creditsLost;
+                    });
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Reset the Game - Reset Bet Credits to 0 and assign Bet Credits value to Credits
+         * User needs to be signed in to reset
+         * Update the Variables and the labels used for displaying the values of the variables.
+         * Catch any exception that occurs when trying to update values in the database.
+         */
+        function reset() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    if(!isSpinning) {
+                        // Update variables
+                        credits += betAmt;
+                        tempBetAmt = betAmt;
+                        betAmt = 0;
+
+                        try {
+                            var updates = {};
+                            updates['/User/'+user.uid+'/credits'] = credits;
+                            updates['/User/'+user.uid+'/betAmt'] = betAmt;
+
+                            // Update Database values
+                            firebase.database().ref().update(updates);
+
+                            // Update Labels
+                            document.getElementById("betAmtLbl").innerHTML = betAmt;
+                            document.getElementById("creditsLbl").innerHTML = credits;
+                            document.getElementById("betMaxCredit").disabled = false;
+                        } catch(err) {
+                            // If an error occurs, display the message to the user and reset the variables
+                            betAmt = tempBetAmt;
+                            credits -= tempBetAmt;
+                            alert(err.message);
+                        }
+                    }
+
+
+                } else {
+                    // If user doesn't seem to be logged in
+                    alert("Session Expired!");
+                }
+            });
+        }
+
+        /**
+         * Function to Log the user out of the application
+         * The user needs to be already logged into the application. Logout the user from the application.
+         * If successful, redirect user to /logout where the user object is emptied and user is taken to login  page.
+         * If failed, show the error message to the user.
+         */
+        function logout() {
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                // If uSer is Signed In
+                if(user) {
+                    // Sign out user
+                    firebase.auth().signOut()
+                            .then(function (err) {
+                                // Success
+                                window.location.href = "/logout";
+                            })
+                            .catch(function (err) {
+                                // Handle errors
+                                var errorCode = error.code;
+                                var errorMessage = error.message;
+                                alert(errorCode + ": " + errorMessage);
+
+                            });
+                }
+            });
+        }
+
+    </script>
+
+</head>
+<body>
+<main>
+    <div class="playerInfo">
+        <div class="logout">
+            <a onclick="logout()" alt="Logout from Slot Machine">Logout</a>
+        </div>
+    </div>
+    <h1>Slot Machine</h1>
+    <section>
+        <!-- Slot Machine Here -->
+        <div class="slotMachine">
+            <center>
+                <h3>Welcome, @user</h3>
+            </center>
+            <div class="lblArea">
+                <p class="left">Bet Amount : $<span id="betAmtLbl"></span></p>
+                <p class="right">Credits : $<span id="creditsLbl"></span></p>
+            </div>
+
+            <div class="spinArea">
+                <div class="slot"><img src="@routes.Assets.versioned("images/bell.png")" alt="Bell Symbol" id="imageOne"/></div>
+                <div class="slot"><img src="@routes.Assets.versioned("images/bell.png")" alt="Bell Symbol" id="imageTwo"/></div>
+                <div class="slot"><img src="@routes.Assets.versioned("images/bell.png")" alt="Bell Symbol" id="imageThree"/></div>
+            </div>
+
+            <center class="message">
+                <div class="green" id="greenMsg"></div>
+                <div class="red" id="redMsg"></div>
+            </center>
+
+            <ul>
+                <li><button name="addCredit" id="addCredit" onclick="addCredits()">Add Credit</button></li>
+                <li><button name="betOneCredit" id="betOneCredit" onclick="betOne()">Bet One</button></li>
+                <li><button name="spin" class="spin" id="spin" onclick="spin()">Spin</button></li>
+                <li><button name="betMaxCredit" id="betMaxCredit" onclick="betMax()">Bet Max</button></li>
+                <li><button name="statistics" id="statistics" onclick="window.location.href='/statistics'">Statistics</button></li>
+                <br />
+                <li><button name="reset" class="reset" id="reset" onclick="reset()">Reset</button></li>
+            </ul>
+        </div>
+    </section>
+    <section id="instructions">
+        <div class="content">
+            <h1>How to Play?</h1>
+
+            <ul>
+                <li>Click on "Add Credit" to add a Credit to your Available Credits. You can add as many credits as you want to.</li>
+                <li>Click on "Bet One" to add a Credit to your Bet Amount. You can bet as many Credits as you want to.</li>
+                <li>Click on "Bet Max" to add 3 Credits to your Bet Amount. You can only press the button once per spin.</li>
+                <li>Click on "Statistics" to view your statistics related to the game. You may view your Wins, Losses, Credits Won etc.</li>
+                <li>Click on "Reset" to reset your Bet Amount and Credits. Current Credits in the Bet Amount is added back to your Credits.</li>
+                <li>Click on "Spin" to play the game.</li>
+            </ul>
+
+        </div>
+    </section>
+</main>
+<footer>
+    <h4>Copyright &copy; 2018. All Rights Reserved. Minoj Selvarasa - 2016131</h4>
+</footer>
+</body>
+</html>

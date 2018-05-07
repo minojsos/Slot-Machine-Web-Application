@@ -1,0 +1,151 @@
+@(user : String, title : String, description : String, keywords : String, author : String, betAmt : String)
+
+<html>
+<head>
+    <title>@title</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="@description"/>
+    <meta name="keywords" content="@keywords"/>
+    <meta name="author" content="@author"/>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/style.css")">
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script src="@routes.Assets.versioned("javascripts/firebase.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/symbol.js")"></script>
+
+    <script>
+        var credits = 0;
+        var wins = 0;
+        var loss = 0;
+        var creditsWon = 0;
+        var creditsBet = 0;
+        var creditsLost = 0;
+        var totalSpins = 0;
+
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+
+            // Ensure the User is signed in
+            firebase.auth().onAuthStateChanged(function(user) {
+                if(user) {
+                    // Retrieve the Credits
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("credits");
+                    firebaseRef.on("value", function(snapshot) {
+                        credits = parseInt(snapshot.val());
+                        document.getElementById("credits").innerHTML = credits;
+                    });
+
+                    // Retrieve the Number of Wins
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("wins");
+                    firebaseRef.on("value", function(snapshot) {
+                        wins = parseInt(snapshot.val());
+                        document.getElementById("wins").innerHTML = wins;
+                    });
+
+                    // Retrieve the Number of Losses
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("loss");
+                    firebaseRef.on("value", function(snapshot) {
+                        loss = parseInt(snapshot.val());
+                        document.getElementById("loss").innerHTML = loss;
+                    });
+
+                    // Retrieve the Total Number of Spins
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("totalSpins");
+                    firebaseRef.on("value", function(snapshot) {
+                        totalSpins = parseInt(snapshot.val());
+                        document.getElementById("totSpins").innerHTML = totalSpins;
+                    });
+
+                    // Retrieve the Total number of credits bet by the user
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("creditsBet");
+                    firebaseRef.on("value", function(snapshot) {
+                        creditsBet = parseInt(snapshot.val());
+                        document.getElementById("credsBet").innerHTML = creditsBet;
+                    });
+
+                    // Retrieve the Total number of credits lost by the user
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("creditsLost");
+                    firebaseRef.on("value", function(snapshot) {
+                        creditsLost = parseInt(snapshot.val());
+                        document.getElementById("credsLost").innerHTML = creditsLost;
+                    });
+
+                    // Retrieve the Total number of credits won by the user
+                    firebaseRef = firebase.database().ref().child("User").child(user.uid).child("creditsWon");
+                    firebaseRef.on("value", function(snapshot) {
+                        creditsWon = parseInt(snapshot.val());
+                        document.getElementById("credsWon").innerHTML = creditsWon;
+                    });
+                } else {
+                    console.log("An Error Occurred : User Not Found ");
+                }
+            });
+        });
+
+        /**
+         * Function to Log the user out of the application
+         * The user needs to be already logged into the application. Logout the user from the application.
+         * If successful, redirect user to /logout where the user object is emptied and user is taken to login  page.
+         * If failed, show the error message to the user.
+         */
+        function logout() {
+
+            firebase.auth().onAuthStateChanged(function(user) {
+                // If uSer is Signed In
+                if(user) {
+                    // Sign out user
+                    firebase.auth().signOut()
+                            .then(function (err) {
+                                // Success
+                                window.location.href = "/logout";
+                            })
+                            .catch(function (err) {
+                                // Handle errors
+                                var errorCode = error.code;
+                                var errorMessage = error.message;
+                                alert(errorCode + ": " + errorMessage);
+
+                            });
+                }
+            });
+        }
+
+    </script>
+
+</head>
+<body>
+<main>
+    <div class="playerInfo">
+        <div class="logout">
+            <a onclick="logout()" alt="Logout from Slot Machine">Logout</a>
+        </div>
+    </div>
+    <h1>Statisitcs</h1>
+    <section>
+        <!-- Slot Machine Here -->
+        <div class="slotMachine">
+            <center>
+                <h3>Welcome, @user</h3>
+                <h3><a href="/" alt="Home">Go Back</a></h3>
+            </center>
+            <div class="statistics">
+                <ul>
+                    <li>Available Credits : <span id="credits"></span></li>
+                    <li>Wins : <span id="wins"></span></li>
+                    <li>Losses : <span id="loss"></span></li>
+                    <li>Total Spins : <span id="totSpins"></span></li>
+                    <li>Credits Won : <span id="credsWon"></span></li>
+                    <li>Credits Bet : <span id="credsBet"></span></li>
+                    <li>Credits Lost : <span id="credsLost"></span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+</main>
+<footer>
+    <h4>Copyright &copy; 2018. All Rights Reserved. Minoj Selvarasa - 2016131</h4>
+</footer>
+</body>
+</html>
